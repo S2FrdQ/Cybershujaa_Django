@@ -19,6 +19,21 @@ jobs:
      - run: echo "This is an integration step"
      - run: exit 1
 
+  SCA-safety:
+    runs-on: ubuntu-latest
+    needs: test
+    steps:
+      - uses: actions/checkout@v2
+      
+      - run: docker run --rm -v $(pwd):/src pyupio/safety check -r requirements.txt --json | tee SCA-safety.json
+        continue-on-error: true             # allow the build to fail
+        
+      - uses: actions/upload-artifact@v2
+        with:
+          name: Safety
+          path: oast-safety.json
+        if: always()        
+
  prod:
    runs-on: ubuntu-latest
    steps:
