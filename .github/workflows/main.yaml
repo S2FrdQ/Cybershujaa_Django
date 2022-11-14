@@ -54,7 +54,7 @@ jobs:
         with:
           name: Safety
           path: sca-safety.json
-        if: always()        # what is this for?
+        if: always()        
 
   odc-owaspdependency:
     runs-on: ubuntu-latest
