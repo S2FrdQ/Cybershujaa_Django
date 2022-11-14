@@ -1,41 +1,114 @@
-name: DjangonvApp # workflow name 
+name: DjangonvApp                                  # workflow name
+
 on:
- push:
-   branches: 
-     - main
+  push:
+    branches:                                 # similar to "only" in GitLab
+      - master
+
 jobs:
- build:
-   runs-on: ubuntu-latest 
-   steps:
-     - run: echo "This is a build step"  
+  build:
+    runs-on: ubuntu-latest                    # similar to "image" in GitLab
+    steps:
+      - uses: actions/checkout@v2
 
- test:
-   runs-on: ubuntu-latest
-   steps: 
-     - run: echo "This is a test step"
+      - name: Setup python
+        uses: actions/setup-python@v2
+        with:
+          python-version: '3.6'
 
- integration:
-   runs-on: ubuntu-latest
-   steps:
-     - run: echo "This is an integration step"
-     - run: exit 1
+      - run: |
+          pip3 install --upgrade virtualenv
+          virtualenv env
+          source env/bin/activate
+          pip install -r requirements.txt
+          python manage.py check
 
- SCA-safety:
-   runs-on: ubuntu-latest
-   needs: test
-   steps:
-     - uses: actions/checkout@v2
+  test:
+    runs-on: ubuntu-latest
+    needs: build
+    steps:
+      - uses: actions/checkout@v2
+
+      - name: Setup python
+        uses: actions/setup-python@v2
+        with:
+          python-version: '3.6'
+
+      - run: |
+          pip3 install --upgrade virtualenv
+          virtualenv env
+          source env/bin/activate
+          pip install -r requirements.txt
+          python manage.py test taskManager
+
+  oast-safety:
+    runs-on: ubuntu-latest
+    needs: test
+    steps:
+      - uses: actions/checkout@v2
       
-     - run: docker run --rm -v $(pwd):/src pyupio/safety check -r requirements.txt --json | tee SCA-safety.json
-       continue-on-error: true             # allow the build to fail
+      - run: docker run --rm -v $(pwd):/src hysnsec/safety check -r requirements.txt --json | tee oast-safety.json
+        continue-on-error: true             # allow the build to fail, similar to allow_failure: true
         
-     - uses: actions/upload-artifact@v2
-       with:
-         name: Safety
-         path: oast-safety.json
-       if: always()        
+      - uses: actions/upload-artifact@v2
+        with:
+          name: Safety
+          path: oast-safety.json
+        if: always()        # what is this for?
 
- prod:
-   runs-on: ubuntu-latest
-   steps:
-     - run: echo "This is a deploy step" 
+  odc-owaspdependency:
+    runs-on: ubuntu-latest
+    name: depecheck_test
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v2
+
+      - name: Depcheck
+        uses: dependency-check/Dependency-Check_Action@main
+        id: Depcheck
+        with:
+          project: 'dangonv'
+          path: '.'
+          format: 'CSV'
+          others: ''
+
+      - name: Upload Test results
+        uses: actions/upload-artifact@master
+        with:
+           name: Depcheck report
+           path: ${{github.workspace}}/reports
+
+  oast-frontend:
+    runs-on: ubuntu-latest
+    needs: test
+    steps:
+      - uses: actions/checkout@v2
+
+      - uses: actions/setup-node@v2
+        with:
+          node-version: '10.x'
+
+      - run: npm install
+
+      - run: docker run --rm -v $(pwd):/src -w /src hysnsec/retire --outputformat json --outputpath retirejs-report.json --severity high
+        continue-on-error: true
+
+      - uses: actions/upload-artifact@v2
+        with:
+          name: RetireJS
+          path: retirejs-report.json
+        if: always()                        # what is this for?
+
+  integration:
+    runs-on: ubuntu-latest
+    needs: oast-frontend
+    steps:
+      - run: echo "This is an integration step"
+      - run: exit 1
+        continue-on-error: true
+
+  prod:
+    runs-on: ubuntu-latest
+    needs: integration
+    steps:
+      - run: echo "This is a deploy step."
