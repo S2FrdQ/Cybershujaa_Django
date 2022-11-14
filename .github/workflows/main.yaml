@@ -2,12 +2,12 @@ name: DjangonvApp                                  # workflow name
 
 on:
   push:
-    branches:                                 # similar to "only" in GitLab
-      - master
+    branches:                                 
+      - main
 
 jobs:
   build:
-    runs-on: ubuntu-latest                    # similar to "image" in GitLab
+    runs-on: ubuntu-latest                    
     steps:
       - uses: actions/checkout@v2
 
@@ -41,19 +41,19 @@ jobs:
           pip install -r requirements.txt
           python manage.py test taskManager
 
-  oast-safety:
+  sca-safety:
     runs-on: ubuntu-latest
     needs: test
     steps:
       - uses: actions/checkout@v2
       
-      - run: docker run --rm -v $(pwd):/src hysnsec/safety check -r requirements.txt --json | tee oast-safety.json
-        continue-on-error: true             # allow the build to fail, similar to allow_failure: true
+      - run: docker run --rm -v $(pwd):/src hysnsec/safety check -r requirements.txt --json | tee sca-safety.json
+        continue-on-error: true             # allow the build to fail
         
       - uses: actions/upload-artifact@v2
         with:
           name: Safety
-          path: oast-safety.json
+          path: sca-safety.json
         if: always()        # what is this for?
 
   odc-owaspdependency:
