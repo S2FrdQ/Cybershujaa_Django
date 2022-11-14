@@ -47,7 +47,7 @@ jobs:
     steps:
       - uses: actions/checkout@v2
       
-      - run: docker run --rm -v $(pwd):/src hysnsec/safety check -r requirements.txt --json | tee sca-safety.json
+      - run: docker run --rm -v $(pwd):/src pyupio/safety check -r requirements.txt --json | tee sca-safety.json
         continue-on-error: true             # allow the build to fail
         
       - uses: actions/upload-artifact@v2
@@ -90,7 +90,7 @@ jobs:
 
       - run: npm install
 
-      - run: docker run --rm -v $(pwd):/src -w /src hysnsec/retire --outputformat json --outputpath retirejs-report.json --severity high
+      - run: docker run --rm -v $(pwd):/src -w /src secfigo/retirejs --outputformat json --outputpath retirejs-report.json --severity high
         continue-on-error: true
 
       - uses: actions/upload-artifact@v2
