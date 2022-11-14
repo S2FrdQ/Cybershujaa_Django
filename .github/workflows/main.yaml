@@ -1,0 +1,25 @@
+name: DjangonvApp # workflow name 
+on:
+ push:
+   branches: 
+     - main
+jobs:
+ build:
+   runs-on: ubuntu-latest 
+   steps:
+     - run: echo "This is a build step"  
+
+ test:
+   runs-on: ubuntu-latest
+   steps: - run: echo "This is a test step"
+
+ integration:
+   runs-on: ubuntu-latest
+   steps:
+     - run: echo "This is an integration step"
+     - run: exit 1
+
+ prod:
+   runs-on: ubuntu-latest
+   steps:
+ - run: echo "This is a deploy step" 
